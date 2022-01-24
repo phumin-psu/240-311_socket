@@ -1,8 +1,8 @@
-import { createServer } from 'net'
+var net = require('net')
 var HOST = '127.0.0.1'
 var PORT = 5000
-var server = createServer()
-var pIDs = Array
+var server = new net.createServer()
+var pIDs = []
 var hp = {}
 var msg = {}
 
@@ -13,11 +13,10 @@ let optionList = 'Select Options:\n'
 var createID = () => {
     let id = 0
     while (true) {
-        if (!pIDs.some((e) => {
-            e == id
-        })) {
+        if (!pIDs.includes(id)) {
             hp[id] = 100
             msg[id] = ''
+            pIDs.push(id)
             return id
         }
         id++
@@ -27,9 +26,9 @@ var createID = () => {
 var removeID = (id) => {
     delete hp[id]
     delete msg[id]
-    const index = array.indexOf(id)
+    const index = pIDs.indexOf(id)
     if (index > -1) {
-        array.splice(index, 1)
+        pIDs.splice(index, 1)
     }
 }
 
@@ -39,7 +38,7 @@ var playerDestroy = (pID, sock) => {
 }
 
 var msgPrint = async (id, sock) => {
-     if (!array.indexOf(id)) return
+     if (!pIDs.indexOf(id)) return
      setTimeout(function() {
         if (msg[id] != '') {
             if (msg[id] == 'die') {
@@ -59,15 +58,14 @@ server.on('connection', function (sock) {
     let state = 0
     let pID = createID()
 
-    pIDs.push(pID)
-
     console.log('CONNECTED: ' + sock.remoteAddress + ':' + sock.remotePort)
 
     msgPrint(pID, sock)
-    sock.write('Welcome to shooting game. Your ID: ' + pID)
-    sock.write(optionList)
+    sock.write('Welcome to shooting game. Your ID: ' + pID + '\n' + optionList)
+    state = 1
 
     sock.on('data', function (data) {
+        console.log('!!! Log > state ' + state + ' data ' + data)
         switch (state) {
             case 1: // response from wait for choose option (option)
                 if (data == 1) { // shoot person
